@@ -1,0 +1,8 @@
+### 測試 Wojak 註冊開戶 API
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "Wojak_V3",
+  "password": "my_secure_password"
+}

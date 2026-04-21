@@ -1,0 +1,87 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### OS Generated Files (作業系統產生的垃圾檔) ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+### Log Files (系統日誌) ###
+*.log
+logs/
+
+### Local Secrets & Envs (未來擴充的資安防護) ###
+.env
+*.env
+application-local.yml
+application-local.properties
+application-secret.yml
+application-secret.properties
+
+### Java/Build Archives (編譯後的封裝檔) ###
+*.class
+*.jar
+*.war
+*.ear
+# 確保 Maven 的核心元件不被忽略 (如果別人 clone 您的專案才跑得動)
+!/.mvn/wrapper/maven-wrapper.jar
+
+### Editor Temp Files (編輯器當機或編輯中產生的暫存檔) ###
+*~
+*.swp
+*.tmp
+*.bak
+
+### Frontend / Full-Stack (預留未來前端開發的黑洞) ###
+node_modules/
+npm-debug.log
+yarn-error.log
+
+### Database Files & Backups (資料庫實體檔與備份) ###
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+*backup*.sql
+*dump*.sql
+*.mdb
+
+### User Uploads / Media (使用者上傳的圖片或檔案) ###
+uploads/
+media/
+files/

@@ -1,0 +1,11 @@
+### 測試 1.0 結算交易中心 (雙式記帳與樂觀鎖防禦)
+POST http://localhost:8080/api/ledger/checkout
+Content-Type: application/json
+
+{
+  "fromAccountId": "32d582cf-f4f4-4141-b035-f6e19d559d5b",
+  "toAccountId": "921cc28c-f2db-4e31-86ff-9d3adc8c73ef",
+  "executionId": "Draw Comic",
+  "timeSpent": 2.00,
+  "sourceVersion": 0
+}
