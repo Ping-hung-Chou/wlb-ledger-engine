@@ -5,7 +5,7 @@
 ---
 
 ## Core Design Decision: Immutable Audit Trail
-![Admin Panel UI Mockup](ui-mockups/admin_panel.png)
+![Admin Panel UI Mockup](ui-mockups/admin_panel-zh.svg)
 A system that exposes full CRUD on `Time_Ledgers` would fail any financial-grade architecture review. Transaction history is **absolutely immutable** by design and regulatory convention. This system deliberately removes Edit and Delete controls from the time ledger interface — the system administrator (including the architect) cannot alter past records.
 
 > *"I implemented Read-only on the time tracking interface for financial compliance. Even as the system admin, I cannot falsify past focus records."*
