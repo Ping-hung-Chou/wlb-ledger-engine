@@ -5,7 +5,7 @@
 ---
 
 ## Part 1 — Data Flow Architecture
-![System Data Flow Diagram](diagrams/dfd.png)
+![System Data Flow Diagram](diagrams/dfd-zh.svg)
 ### Design Philosophy: Pipelined High-Concurrency Defence
 
 The core design principle is **boundary enforcement** — completely isolating unpredictable external risks (user double-clicks, LLM API timeouts) from the absolutely safe internal vault (the database). The system's layout maps directly to a real bank's physical defence layers.
