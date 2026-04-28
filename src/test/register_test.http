@@ -1,8 +1,88 @@
-### 測試 Wojak 註冊開戶 API
-POST http://localhost:8080/api/auth/register
+# =============================================================================
+# Project Chronicle — Auth / Register API Test Collection
+#
+# Preconditions (edit values here before running)
+# =============================================================================
+
+@baseUrl       = http://localhost:8080/api/auth
+@validUsername = Wojak_V3
+@validPassword = my_secure_password
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-01 | 正常註冊 (Happy Path)
+#
+# GIVEN  一個全新的、資料庫中不存在的 username
+# WHEN   POST {{baseUrl}}/register
+# THEN   Status == 200 OK
+# AND    Body contains "Registered successfully"
+# AND    (V1) 登入成功 → 間接確認 Identity 記錄已建立
+# AND    (V2) 取得帳戶列表 → 確認 Available Time Pool (SOURCE, balance=0)
+#             及 Leisure Asset (TARGET, balance=0) 已建立
+#
+# NOTE   V2 需要 GET /api/accounts 端點，目前尚未實作；
+#        暫以人工 DB 查詢驗證：
+#          SELECT * FROM asset_accounts WHERE identity_id = '<new_id>';
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [TC-01] Register — Happy Path
+POST {{baseUrl}}/register
 Content-Type: application/json
 
 {
-  "username": "Wojak_V3",
-  "password": "my_secure_password"
+  "username": "{{validUsername}}",
+  "password": "{{validPassword}}"
 }
+
+> {%
+    client.test("[TC-01] Status should be 200 OK", function () {
+        client.assert(response.status === 200,
+            "Expected 200 but got " + response.status +
+            ". Body: " + response.body);
+    });
+
+    client.test("[TC-01] Body should contain 'Registered successfully'", function () {
+        client.assert(
+            response.body.includes("Registered successfully"),
+            "Expected 'Registered successfully' in body, got: " + response.body
+        );
+    });
+
+    client.log("[TC-01] Registration response: " + response.body);
+%}
+
+###
+
+### [TC-01-V1] Verify Identity exists — Login with the newly registered credentials
+# 登入成功 → 間接證明 Identity 記錄已寫入資料庫，且 BCrypt 雜湊正確
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "{{validUsername}}",
+  "password": "{{validPassword}}"
+}
+
+> {%
+    client.test("[TC-01-V1] Identity exists in DB — Login should return 200", function () {
+        client.assert(response.status === 200,
+            "Login after registration failed (" + response.status + "). " +
+            "Identity record may not have been persisted. Body: " + response.body);
+    });
+
+    client.test("[TC-01-V1] Response body should be a non-empty JWT token", function () {
+        client.assert(
+            response.body != null && response.body.trim().length > 0,
+            "Expected a JWT token in the response body, got empty body."
+        );
+    });
+
+    if (response.status === 200) {
+        client.global.set("tc01Token", response.body);
+        client.log("[TC-01-V1] JWT token saved (first 20 chars): " +
+            response.body.substring(0, 20) + "...");
+    }
+%}
+
+###
+

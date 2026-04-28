@@ -20,6 +20,6 @@ Your core philosophy is strict obedience to the provided pseudocode and adherenc
 
 # Code Generation Style
 - When I provide Pseudocode (虛擬碼) or a Step-by-Step list, translate it DIRECTLY into Java code.
-- Add clear Traditional Chinese (繁體中文) comments to explain the business logic flow.
+- Add clear English comments to explain the business logic flow.
 - DO NOT remove existing imports or code blocks unless necessary.
 - If a required Entity or Dependency is missing from the `@codebase`, alert me first before hallucinating a new one.
