@@ -1,0 +1,211 @@
+# =============================================================================
+# Project Chronicle — Milestone API Test Collection
+#
+# Collection Variables (edit values here before running)
+# architectToken and userToken are left empty — written automatically by G0-1 / G0-2.
+# =============================================================================
+
+@baseUrl           = http://localhost:8080
+@architectUsername = Wojak_V3
+@architectPassword = my_secure_password
+@userUsername      = Wojak_V3
+@userPassword      = my_secure_password
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GROUP 0 — Setup  (run these first before every test session)
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [G0-1] Login as ARCHITECT — stores architectToken on success
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{architectUsername}}",
+  "password": "{{architectPassword}}"
+}
+
+> {%
+    client.test("[G0-1] Login as ARCHITECT: status should be 200", function () {
+        client.assert(response.status === 200,
+            "ARCHITECT login failed (" + response.status + "). " +
+            "Check credentials above and ensure the account exists.");
+    });
+
+    if (response.status === 200) {
+        // JWT is returned as a plain string body — store globally for downstream requests.
+        client.global.set("architectToken", response.body);
+        client.log("architectToken saved: " + response.body.substring(0, 20) + "...");
+    }
+%}
+
+###
+
+### [G0-2] Login as USER (regular role) — stores userToken
+# NOTE: Current AuthService assigns ["USER","ARCHITECT"] to every new account.
+# To get a pure USER token, register a second account then run:
+#   UPDATE Identities SET role = '["USER"]' WHERE username = 'regular_user';
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{userUsername}}",
+  "password": "{{userPassword}}"
+}
+
+> {%
+    client.test("[G0-2] Login as USER: status should be 200", function () {
+        client.assert(response.status === 200,
+            "USER login failed (" + response.status + "). " +
+            "Check credentials above and ensure the account exists.");
+    });
+
+    if (response.status === 200) {
+        client.global.set("userToken", response.body);
+        client.log("userToken saved: " + response.body.substring(0, 20) + "...");
+    }
+%}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GROUP 4 — Happy Path
+# Pre-condition: G0-1 must have run successfully so architectToken is populated.
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [G4-1] Create WORK milestone with description
+POST {{baseUrl}}/api/milestones
+Content-Type: application/json
+Authorization: Bearer {{architectToken}}
+
+{
+  "title": "Q2 Sprint Goal",
+  "description": "Finish ledger engine",
+  "milestoneType": "WORK",
+  "targetMinutes": 120
+}
+
+> {%
+    // ── Status ────────────────────────────────────────────────────────────────
+    client.test("[G4-1] status should be 201 Created", function () {
+        client.assert(response.status === 201,
+            "Expected 201 but got " + response.status + ". Body: " + response.body);
+    });
+
+    var body = response.body;
+
+    // ── nodeId ────────────────────────────────────────────────────────────────
+    client.test("[G4-1] body.nodeId should exist and be a non-empty UUID", function () {
+        client.assert(typeof body.nodeId === "string" && body.nodeId.length === 36,
+            "nodeId is missing or not a 36-char UUID. Got: " + body.nodeId);
+    });
+
+    // ── identityId ────────────────────────────────────────────────────────────
+    // Full JWT decode is not available in HTTP Client scripts.
+    // We verify it is a non-empty UUID string; manual cross-check against DB is recommended.
+    client.test("[G4-1] body.identityId should be a non-empty UUID", function () {
+        client.assert(typeof body.identityId === "string" && body.identityId.length === 36,
+            "identityId is missing or not a 36-char UUID. Got: " + body.identityId);
+    });
+
+    // ── title ─────────────────────────────────────────────────────────────────
+    client.test("[G4-1] body.title should equal 'Q2 Sprint Goal'", function () {
+        client.assert(body.title === "Q2 Sprint Goal",
+            "Expected 'Q2 Sprint Goal' but got: " + body.title);
+    });
+
+    // ── milestoneType ─────────────────────────────────────────────────────────
+    client.test("[G4-1] body.milestoneType should be 'WORK'", function () {
+        client.assert(body.milestoneType === "WORK",
+            "Expected 'WORK' but got: " + body.milestoneType);
+    });
+
+    // ── status (default) ──────────────────────────────────────────────────────
+    client.test("[G4-1] body.status should default to 'PENDING'", function () {
+        client.assert(body.status === "PENDING",
+            "Expected 'PENDING' but got: " + body.status);
+    });
+
+    // ── targetMinutes ─────────────────────────────────────────────────────────
+    client.test("[G4-1] body.targetMinutes should be 120", function () {
+        client.assert(body.targetMinutes === 120,
+            "Expected 120 but got: " + body.targetMinutes);
+    });
+
+    // ── actualMinutes (default) ───────────────────────────────────────────────
+    client.test("[G4-1] body.actualMinutes should default to 0", function () {
+        client.assert(body.actualMinutes === 0,
+            "Expected 0 but got: " + body.actualMinutes);
+    });
+
+    // ── timeMultiplier (default) ──────────────────────────────────────────────
+    client.test("[G4-1] body.timeMultiplier should exist", function () {
+        client.assert(body.timeMultiplier !== null && body.timeMultiplier !== undefined,
+            "timeMultiplier is missing from response body.");
+    });
+
+    // ── createdAt ─────────────────────────────────────────────────────────────
+    client.test("[G4-1] body.createdAt should exist", function () {
+        client.assert(body.createdAt !== null && body.createdAt !== undefined,
+            "createdAt is missing from response body.");
+    });
+
+    // ── Nullable timestamp fields ─────────────────────────────────────────────
+    client.test("[G4-1] body.startedAt should be null", function () {
+        client.assert(body.startedAt === null || body.startedAt === undefined,
+            "Expected null but got: " + body.startedAt);
+    });
+    client.test("[G4-1] body.completedAt should be null", function () {
+        client.assert(body.completedAt === null || body.completedAt === undefined,
+            "Expected null but got: " + body.completedAt);
+    });
+    client.test("[G4-1] body.pausedAt should be null", function () {
+        client.assert(body.pausedAt === null || body.pausedAt === undefined,
+            "Expected null but got: " + body.pausedAt);
+    });
+
+    // Save nodeId for potential use in later tests.
+    if (response.status === 201) {
+        client.global.set("workMilestoneId", body.nodeId);
+        client.log("[G4-1] workMilestoneId saved: " + body.nodeId);
+    }
+%}
+
+###
+
+### [G4-2] Create LEISURE milestone without description
+POST {{baseUrl}}/api/milestones
+Content-Type: application/json
+Authorization: Bearer {{architectToken}}
+
+{
+  "title": "Morning Run",
+  "milestoneType": "LEISURE",
+  "targetMinutes": 30
+}
+
+> {%
+    // ── Status ────────────────────────────────────────────────────────────────
+    client.test("[G4-2] status should be 201 Created", function () {
+        client.assert(response.status === 201,
+            "Expected 201 but got " + response.status + ". Body: " + response.body);
+    });
+
+    var body = response.body;
+
+    // ── milestoneType ─────────────────────────────────────────────────────────
+    client.test("[G4-2] body.milestoneType should be 'LEISURE'", function () {
+        client.assert(body.milestoneType === "LEISURE",
+            "Expected 'LEISURE' but got: " + body.milestoneType);
+    });
+
+    // ── description (omitted in request → should be null) ─────────────────────
+    client.test("[G4-2] body.description should be null when not provided", function () {
+        client.assert(body.description === null || body.description === undefined,
+            "Expected null/undefined but got: " + body.description);
+    });
+
+    if (response.status === 201) {
+        client.global.set("leisureMilestoneId", body.nodeId);
+        client.log("[G4-2] leisureMilestoneId saved: " + body.nodeId);
+    }
+%}

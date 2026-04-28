@@ -1,26 +1,30 @@
 package com.chronicle.wlb.service;
 
+import com.chronicle.wlb.dto.LoginRequest;
 import com.chronicle.wlb.dto.RegisterRequest;
 import com.chronicle.wlb.entity.AssetAccount;
 import com.chronicle.wlb.entity.Identity;
 import com.chronicle.wlb.repository.AssetAccountRepository;
 import com.chronicle.wlb.repository.IdentityRepository;
+import com.chronicle.wlb.security.JwtUtil;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
-// 引入 Lombok
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor // 🌟 核心魔法：Lombok 會自動幫所有標記為 final 的變數建立「建構子合約」！
+@RequiredArgsConstructor
 public class AuthService {
 
     private final IdentityRepository identityRepo;
     private final AssetAccountRepository accountRepo;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Transactional(rollbackFor = Exception.class) // 核心防禦：開戶與發放初始錢包，必須同時成功或同時失敗
     public Identity registerUser(RegisterRequest request) {
@@ -60,5 +64,42 @@ public class AuthService {
         accountRepo.save(targetAccount);
 
         return newUser;
+    }
+
+    /**
+     * Validates credentials and issues a JWT token on success.
+     * The token subject is identity_id (UUID) — not username —
+     * so all downstream services can use it directly as a database FK.
+     *
+     * @param request login payload containing username and password
+     * @return signed JWT token string
+     * @throws IllegalArgumentException if the username is not found or the password is wrong
+     */
+    /**
+     * Converts the JSON role string stored in the DB (e.g. ["USER","ARCHITECT"])
+     * into a plain List<String> without importing a heavy JSON library.
+     * Expected format: a JSON array of quoted strings with no nested objects.
+     */
+    private List<String> parseRoleJson(String roleJson) {
+        if (roleJson == null || roleJson.isBlank()) return List.of();
+        // Strip brackets and quotes, then split on commas.
+        String stripped = roleJson.replaceAll("[\\[\\]\"\\s]", "");
+        return Arrays.asList(stripped.split(","));
+    }
+
+    public String login(LoginRequest request) {
+        Identity user = identityRepo.findByUsername(request.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid username or password.");
+        }
+
+        // Parse the role JSON string (e.g. ["USER","ARCHITECT"]) into a plain List<String>.
+        // This is a lightweight parse to avoid pulling in a full ObjectMapper dependency here.
+        List<String> roles = parseRoleJson(user.getRole());
+
+        // Issue a token: subject = identity_id, roles embedded as a JWT claim.
+        return jwtUtil.generateToken(user.getIdentityId(), roles);
     }
 }

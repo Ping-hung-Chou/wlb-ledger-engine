@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface MilestoneNodeRepository extends JpaRepository<MilestoneNode, String> {
-    // 找特定 Wojak 的目標
+    // Returns all milestone nodes belonging to the given identity (user).
     List<MilestoneNode> findByIdentityId(String identityId);
 }
