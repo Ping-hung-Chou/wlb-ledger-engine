@@ -40,9 +40,9 @@ public class MilestoneService {
         // status, actualMinutes, timeMultiplier, createdAt, nodeId
         // are all initialized automatically by @PrePersist — do not set them here.
 
-        milestoneRepo.save(node);
+        MilestoneNode savedNode = milestoneRepo.save(node);
 
-        return mapToResponse(node);
+        return mapToResponse(savedNode);
     }
 
     /**
