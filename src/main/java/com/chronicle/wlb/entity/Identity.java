@@ -2,6 +2,8 @@ package com.chronicle.wlb.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity // 告訴 Spring 這是資料庫的替身
@@ -22,9 +24,11 @@ public class Identity {
     @Column(name = "role", columnDefinition = "JSON")
     private String role; // JSON 格式在 Java 先用 String 接住
 
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }
