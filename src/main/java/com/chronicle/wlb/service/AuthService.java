@@ -67,15 +67,6 @@ public class AuthService {
     }
 
     /**
-     * Validates credentials and issues a JWT token on success.
-     * The token subject is identity_id (UUID) — not username —
-     * so all downstream services can use it directly as a database FK.
-     *
-     * @param request login payload containing username and password
-     * @return signed JWT token string
-     * @throws IllegalArgumentException if the username is not found or the password is wrong
-     */
-    /**
      * Converts the JSON role string stored in the DB (e.g. ["USER","ARCHITECT"])
      * into a plain List<String> without importing a heavy JSON library.
      * Expected format: a JSON array of quoted strings with no nested objects.
@@ -87,6 +78,15 @@ public class AuthService {
         return Arrays.asList(stripped.split(","));
     }
 
+    /**
+     * Validates credentials and issues a JWT token on success.
+     * The token subject is identity_id (UUID) — not username —
+     * so all downstream services can use it directly as a database FK.
+     *
+     * @param request login payload containing username and password
+     * @return signed JWT token string
+     * @throws IllegalArgumentException if the username is not found or the password is wrong
+     */
     public String login(LoginRequest request) {
         Identity user = identityRepo.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password."));

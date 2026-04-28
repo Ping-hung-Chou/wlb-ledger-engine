@@ -2,7 +2,6 @@ package com.chronicle.wlb.controller;
 
 import com.chronicle.wlb.dto.LoginRequest;
 import com.chronicle.wlb.dto.RegisterRequest;
-import com.chronicle.wlb.entity.Identity;
 import com.chronicle.wlb.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +18,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            Identity createdUser = authService.registerUser(request);
+            authService.registerUser(request);
             return ResponseEntity.ok("Registered successfully! Your account has been created.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
