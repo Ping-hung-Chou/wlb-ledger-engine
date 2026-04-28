@@ -23,3 +23,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+# JWT configuration — secret is loaded from env var JWT_SECRET in production.
+# The secret must be at least 32 characters (256-bit) for HS256 signing.
+jwt:
+  secret: ${JWT_SECRET:chronicle-wlb-super-secret-key-for-dev-only-32ch}
+  expiration-ms: 86400000   # 24 hours in milliseconds

@@ -1,37 +1,52 @@
 package com.chronicle.wlb.config;
 
+import com.chronicle.wlb.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Central security configuration for Project Chronicle.
+ * Enforces stateless JWT authentication — no session cookies are created.
+ * The JwtAuthenticationFilter runs before every request and injects
+ * identity_id into the SecurityContext principal when a valid token is present.
+ */
 @Configuration
-@EnableWebSecurity // 啟動特勤部隊
+@EnableWebSecurity
+@EnableMethodSecurity  // Activates @PreAuthorize / @PostAuthorize on controller methods.
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // 1. 設定密碼加密器 (將 BCrypt 變成全銀行共用的工具)
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 2. 規劃 API 通行權限
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 關閉 CSRF 防護 (因為我們是 REST API，且沒有使用傳統 Cookie 登入)
                 .csrf(csrf -> csrf.disable())
-                // 設定路由權限
+                // Stateless API — Spring Security must not create or use HTTP sessions.
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 🌟 白名單：允許所有人(permitAll)訪問註冊大門
+                        // Public routes: registration and login do not require a token.
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/ledger/**").permitAll() // 🌟 暫時開放記帳大門方便測試
-                        // 其他所有的 API，都必須要有通行證(登入)才能訪問
+                        // Every other endpoint requires a valid JWT.
                         .anyRequest().authenticated()
-                );
+                )
+                // Mount the JWT filter before Spring's default username/password filter.
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
